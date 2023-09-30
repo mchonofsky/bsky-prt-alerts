@@ -77,7 +77,7 @@ export default class Bot {
       return text;
     }))
     
-    if ( false ) { //!dryRun) {
+    if ( !dryRun ) {
       const promises = posts.map(async (text: string) => bot.post(text));
       await Promise.all(promises);
     }
