@@ -39,7 +39,7 @@ jobs:
           # Check if the cached file exists
           if [ -f calculated_value.txt ]; then
             # Read the content of the cached file
-            CACHED_VALUE=$(cat calculated_value.txt)
+            CACHED_VALUE=$(tail -n 1 calculated_value.txt)
             echo "Cached Value: $CACHED_VALUE"
           else
             CACHED_VALUE=""
