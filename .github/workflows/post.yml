@@ -50,8 +50,9 @@ jobs:
       
       - name: Send post
         run: |
-          output=$(npm start -- $START_COUNT | grep ">>>" | sed 's/>>>\([^<]\+\)<<</\1/')
+          output=$(npm start -- ${{env.START_COUNT}} | grep ">>>" | sed 's/>>>\([^<]\+\)<<</\1/')
           echo $output >> calculated_value.txt
+          echo "output was $output"
         env:
           BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
           BSKY_PASSWORD: ${{ secrets.BSKY_PASSWORD }}
