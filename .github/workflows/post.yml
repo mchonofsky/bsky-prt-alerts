@@ -45,8 +45,8 @@ jobs:
             CACHED_VALUE=""
             echo "Cached file not found."
           fi
-          echo "START_COUNT=$CACHED_VALUE" >> "$GITHUB_ENV"
-          echo "START_COUNT set as $CACHED_VALUE"
+          echo "START_COUNT=${CACHED_VALUE}<<"
+          echo "START_COUNT=${CACHED_VALUE}" >> "$GITHUB_ENV"
       
       - name: Send post
         id: send-post
