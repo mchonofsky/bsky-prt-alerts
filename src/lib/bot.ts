@@ -63,7 +63,7 @@ export default class Bot {
       : this.defaultOptions;
     const bot = new Bot(service);
     await bot.login(bskyAccount);
-    let alerts = (await axios.get<CTAData>('http://www.transitchicago.com/api/1.0/alerts.aspx?outputType=JSON&activeonly=TRUE')).data.CTAAlerts.Alert
+    let alerts = (await axios.get<CTAData>('http://www.transitchicago.com/api/1.0/alerts.aspx?outputType=JSON&accessibility=FALSE&activeonly=TRUE')).data.CTAAlerts.Alert
     let headFilt = alerts.map((x: CTAAlert)=>x.Headline + x.ShortDescription)
     let nextParameter = alerts.map((a: CTAAlert) => parseInt(a.AlertId)).reduce((a: number, r: number) => r > a ? r : a, 0);
     alerts = alerts.filter ( (a: CTAAlert, i: number) => i ==0 || ! (headFilt.slice(0, i - 1).includes(a.Headline + a.ShortDescription)))
