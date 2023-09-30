@@ -46,7 +46,7 @@ jobs:
             echo "Cached file not found."
           fi
           echo "START_COUNT=$CACHED_VALUE" >> "$GITHUB_ENV"
-
+          echo "START_COUNT set as $CACHED_VALUE"
       - name: Send post
         run: |
           output=$(npm start -- $START_COUNT | grep ">>>" | sed 's/>>>\([^<]\+\)<<</\1/')
@@ -56,7 +56,7 @@ jobs:
           BSKY_PASSWORD: ${{ secrets.BSKY_PASSWORD }}
       
       - name: Cache Calculated Value
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: calculated_value.txt  # Specify the path to the file you want to cache
-          key: ${{ runner.os }}-value-${{ hashFiles('calculated_value.txt') }}
+          key: value 
