@@ -16,8 +16,13 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version-file: ".nvmrc"
-      - run: npm ci
-      - run: npm run build
+          cache: npm
+      
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build app
+        run: npm run build
 
       - name: Download Cached Value
         uses: actions/cache@v2
