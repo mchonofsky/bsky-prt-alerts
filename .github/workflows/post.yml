@@ -35,7 +35,7 @@ jobs:
           path: calculated_value.txt  # Specify the path to the cached file
           key: value-${{ env.FAKE_COUNT }} # this should fail to find the cache
           restore-keys: |
-            value-
+            value-a-
 
       - name: Read Cached Value
         run: |
@@ -66,4 +66,4 @@ jobs:
         uses: actions/cache@v3
         with:
           path: calculated_value.txt  # Specify the path to the file you want to cache
-          key: value-${{ steps.send-post.outputs.LAST_COUNT }}
+          key: value-a-${{ steps.send-post.outputs.LAST_COUNT }}
