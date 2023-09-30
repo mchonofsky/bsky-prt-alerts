@@ -60,4 +60,4 @@ jobs:
         uses: actions/cache@v3
         with:
           path: calculated_value.txt  # Specify the path to the file you want to cache
-          key: value-$START_COUNT
+          key: value-${{env.START_COUNT}}
