@@ -30,7 +30,6 @@ jobs:
         uses: actions/cache@v3
         with:
           path: calculated_value.txt  # Specify the path to the cached file
-          key: value
           restore-keys: |
             value-
 
