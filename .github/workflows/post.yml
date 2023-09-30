@@ -49,8 +49,10 @@ jobs:
           echo "START_COUNT set as $CACHED_VALUE"
       
       - name: Send post
+        id: send-post
         run: |
           output=$(npm start -- ${{env.START_COUNT}} | grep ">>>" | sed 's/>>>\([^<]\+\)<<</\1/')
+          echo "LAST_COUNT=$output" >> "$GITHUB_RESULTS"
           echo $output >> calculated_value.txt
           echo "output was $output"
         env:
@@ -61,4 +63,4 @@ jobs:
         uses: actions/cache@v3
         with:
           path: calculated_value.txt  # Specify the path to the file you want to cache
-          key: value-${{env.START_COUNT}}
+          key: value-${{ steps.send-post.outputs.LAST_COUNT }}
