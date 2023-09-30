@@ -1,4 +1,10 @@
-export default async function getPostText() {
+import type {CTAAlert} from './cta_types.js'
+
+export default async function getPostText(alert_: CTAAlert) {
   // Generate the text for your post here. You can return a string or a promise that resolves to a string
-  return "Hello from the Bluesky API";
+  var text = `${alert_.Headline}: ${alert_.ShortDescription}`;
+  if (text.length > 300) {
+    text = text.slice(0, 250) + '... ' + alert_.AlertURL['#cdata-section']
+  }
+  return text;
 }

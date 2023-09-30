@@ -1,4 +1,9 @@
+import axios from "axios";
 import { bskyAccount, bskyService } from "./config.js";
+import type {
+  CTAData, CTAAlert
+} from "./cta_types.js"
+
 import type {
   AtpAgentLoginOpts,
   AtpAgentOpts,
@@ -9,6 +14,7 @@ const { BskyAgent, RichText } = atproto;
 
 type BotOptions = {
   service: string | URL;
+  parameter: number; 
   dryRun: boolean;
 };
 
@@ -17,6 +23,7 @@ export default class Bot {
 
   static defaultOptions: BotOptions = {
     service: bskyService,
+    parameter: 999,
     dryRun: false,
   } as const;
 
@@ -48,18 +55,33 @@ export default class Bot {
   }
 
   static async run(
-    getPostText: () => Promise<string>,
+    getPostText: (a: CTAAlert) => Promise<string>,
     botOptions?: Partial<BotOptions>
   ) {
-    const { service, dryRun } = botOptions
+    const { service, dryRun, parameter} = botOptions
       ? Object.assign({}, this.defaultOptions, botOptions)
       : this.defaultOptions;
     const bot = new Bot(service);
     await bot.login(bskyAccount);
-    const text = await getPostText();
+    let alerts = (await axios.default.get<CTAData>('http://www.transitchicago.com/api/1.0/alerts.aspx?outputType=JSON&activeonly=TRUE')).data.CTAAlerts.Alert
+    let headFilt = alerts.map(x=>x.Headline + x.ShortDescription)
+    alerts = alerts.filter ( (a: CTAAlert, i: number) => i ==0 || ! (headFilt.slice(0, i - 1).includes(a.Headline + a.ShortDescription)))
+    alerts = alerts.filter( (a: CTAAlert) => parseInt(a.AlertId) > parameter);
+    
+    console.log("remaining", alerts.length)
+    
+    let nextParameter = alerts.map((a: CTAAlert) => parseInt(a.AlertId)).reduce((a: number, r: number) => r > a ? r : a, 0);
+    
+    let posts = await Promise.all(alerts.map( async (alert_: CTAAlert) => {
+      const text = await getPostText(alert_);
+      return text;
+    }))
+    
     if (!dryRun) {
-      await bot.post(text);
+      const promises = posts.map(async (text: string) => bot.post(text));
+      await Promise.all(promises);
     }
-    return text;
+    console.log(`>>>${nextParameter}<<<`);
+    return posts;
   }
 }

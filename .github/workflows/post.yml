@@ -1,23 +1,55 @@
 name: "Post to Bluesky"
 
 on: workflow_dispatch
-# on:
-#   schedule:
-#     - cron: "30 5,17 * * *"
+on:
+  schedule:
+    - cron: "*/7 * * * *" 
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/cache@v3
       - uses: actions/checkout@v3
+      
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
           node-version-file: ".nvmrc"
       - run: npm ci
       - run: npm run build
+
+      - name: Download Cached Value
+        uses: actions/cache@v2
+        with:
+          path: calculated_value.txt  # Specify the path to the cached file
+          key: value 
+          restore-keys: |
+            value 
+
+      - name: Read Cached Value
+        run: |
+          # Check if the cached file exists
+          if [ -f calculated_value.txt ]; then
+            # Read the content of the cached file
+            CACHED_VALUE=$(cat calculated_value.txt)
+            echo "Cached Value: $CACHED_VALUE"
+          else
+            CACHED_VALUE=""
+            echo "Cached file not found."
+          fi
+          echo "START_COUNT=$CACHED_VALUE" >> "$GITHUB_ENV"
+
       - name: Send post
-        run: npm start
+        run: |
+          output=$(npm start -- $START_COUNT | grep ">>>" | sed 's/>>>\([^<]\+\)<<</\1/')
+          echo $output >> calculated_value.txt
         env:
           BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
           BSKY_PASSWORD: ${{ secrets.BSKY_PASSWORD }}
+      
+      - name: Cache Calculated Value
+        uses: actions/cache@v2
+        with:
+          path: calculated_value.txt  # Specify the path to the file you want to cache
+          key: ${{ runner.os }}-value-${{ hashFiles('calculated_value.txt') }}
