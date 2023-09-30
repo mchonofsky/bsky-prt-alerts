@@ -52,7 +52,7 @@ jobs:
         id: send-post
         run: |
           output=$(npm start -- ${{env.START_COUNT}} | grep ">>>" | sed 's/>>>\([^<]\+\)<<</\1/')
-          echo "LAST_COUNT=$output" >> "$GITHUB_OUTPUTS"
+          echo "LAST_COUNT=$output" >> "$GITHUB_OUTPUT"
           echo $output >> calculated_value.txt
           echo "output was $output"
         env:
