@@ -9,9 +9,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/cache@v3
-      - uses: actions/checkout@v3
-      
       - name: Use Node.js
         uses: actions/setup-node@v3
         with:
@@ -25,7 +22,7 @@ jobs:
         run: npm run build
 
       - name: Download Cached Value
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: calculated_value.txt  # Specify the path to the cached file
           key: value 
