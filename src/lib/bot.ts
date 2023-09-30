@@ -65,12 +65,12 @@ export default class Bot {
     await bot.login(bskyAccount);
     let alerts = (await axios.get<CTAData>('http://www.transitchicago.com/api/1.0/alerts.aspx?outputType=JSON&activeonly=TRUE')).data.CTAAlerts.Alert
     let headFilt = alerts.map((x: CTAAlert)=>x.Headline + x.ShortDescription)
+    let nextParameter = alerts.map((a: CTAAlert) => parseInt(a.AlertId)).reduce((a: number, r: number) => r > a ? r : a, 0);
     alerts = alerts.filter ( (a: CTAAlert, i: number) => i ==0 || ! (headFilt.slice(0, i - 1).includes(a.Headline + a.ShortDescription)))
     alerts = alerts.filter( (a: CTAAlert) => parseInt(a.AlertId) > parameter);
     
     console.log("remaining", alerts.length)
     
-    let nextParameter = alerts.map((a: CTAAlert) => parseInt(a.AlertId)).reduce((a: number, r: number) => r > a ? r : a, 0);
     
     let posts = await Promise.all(alerts.map( async (alert_: CTAAlert) => {
       const text = await getPostText(alert_);
