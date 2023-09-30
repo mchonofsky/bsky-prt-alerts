@@ -25,12 +25,15 @@ jobs:
 
       - name: Build app
         run: npm run build
+      - name: Get epoch time
+        run: |
+          echo "FAKE_COUNT=$(date --rfc-339=seconds)" >> "$GITHUB_ENV"
 
       - name: Download Cached Value
         uses: actions/cache@v3
         with:
           path: calculated_value.txt  # Specify the path to the cached file
-          key: value-$(date --rfc-3339=secnds) # this should fail to find the cache
+          key: value-${{ env.FAKE_COUNT }} # this should fail to find the cache
           restore-keys: |
             value-
 
