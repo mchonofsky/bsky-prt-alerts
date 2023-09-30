@@ -68,7 +68,7 @@ export default class Bot {
     let nextParameter = alerts.map((a: CTAAlert) => parseInt(a.AlertId)).reduce((a: number, r: number) => r > a ? r : a, 0);
     alerts = alerts.filter ( (a: CTAAlert, i: number) => i ==0 || ! (headFilt.slice(0, i - 1).includes(a.Headline + a.ShortDescription)))
     alerts = alerts.filter( (a: CTAAlert) => parseInt(a.AlertId) > parameter);
-    
+    alerts = alerts.filter ((a: CTAAlert) => (! a.Headline.toLowerCase().includes('elevator')) 
     console.log("remaining", alerts.length)
     
     
