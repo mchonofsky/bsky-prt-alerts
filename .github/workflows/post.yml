@@ -56,6 +56,9 @@ jobs:
         run: |
           output=$(npm start -- ${{env.START_COUNT}} | grep ">>>" | sed 's/>>>\([^<]\+\)<<</\1/')
           echo "LAST_COUNT=$output" >> "$GITHUB_OUTPUT"
+          if [ -z $output ]; then
+            output=env.START_COUNT;
+          fi
           echo $output > calculated_value.txt
           echo "output was $output"
         env:
