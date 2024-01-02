@@ -5,7 +5,7 @@ const argv = process.argv.map(x => parseInt(x)).filter(x =>!Number.isNaN(x))
 let dryRun = false;
 
 if (argv.length == 0) {
-  console.log('setting dry run true')
+  console.log('setting dry run is true')
   // this is if the cache doesn't exist
   dryRun = true;
 }
