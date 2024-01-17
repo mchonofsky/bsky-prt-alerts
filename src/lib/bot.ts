@@ -69,6 +69,7 @@ export default class Bot {
     alerts = alerts.filter ( (a: CTAAlert, i: number) => i ==0 || ! (headFilt.slice(0, i - 1).includes(a.Headline + a.ShortDescription)))
     alerts = alerts.filter( (a: CTAAlert) => parseInt(a.AlertId) > parameter);
     alerts = alerts.filter ((a: CTAAlert) => (! a.Headline.toLowerCase().includes('elevator'))) 
+    alerts = alerts.filter ((a: CTAAlert) => (Date.parse(a.EventStart) > Date.now() - 3600000))
     console.log("remaining", alerts.length)
     
     
