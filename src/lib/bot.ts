@@ -1,5 +1,6 @@
 import axios from "axios";
-import { bskyAccount, bskyService } from "./config.js";
+import admin from 'firebase-admin';
+import { bskyAccount, bskyService, firebaseServiceAccount } from "./config.js";
 import type {
   CTAData, CTAAlert
 } from "./cta_types.js"
@@ -11,6 +12,34 @@ import type {
 } from "@atproto/api";
 import atproto from "@atproto/api";
 const { BskyAgent, RichText } = atproto;
+
+admin.initializeApp({
+  credential: admin.credential.cert(firebaseServiceAccount)
+});
+const db = admin.firestore();
+
+async function addData(parameter: number) {
+  try {
+    const docRef = await db.collection('alerts').doc(String(parameter)).set({
+      id: parameter,
+    });
+    console.log('Document written with ID: ', parameter);
+  } catch (e) {
+    console.error('Error adding document: ', e);
+  }
+}
+
+async function getMax() {
+  const alertsRef = db.collection('alerts');
+  try {
+    const docRef = (await alertsRef.orderBy("id", "desc").limit(1).get()).docs[0];
+    console.log('Document written with ID: ', docRef.id);
+    return parseInt(docRef.id);
+  } catch (e) {
+    console.error('Error getting document: ', e);
+    return 999999999;
+  }
+}
 
 type BotOptions = {
   service: string | URL;
@@ -58,7 +87,9 @@ export default class Bot {
     getPostText: (a: CTAAlert) => Promise<string>,
     botOptions?: Partial<BotOptions>
   ) {
-    const { service, dryRun, parameter} = botOptions
+    const parameter = await getMax();
+    console.log('parameter returned is', parameter)
+    const { service, dryRun /*, parameter */} = botOptions
       ? Object.assign({}, this.defaultOptions, botOptions)
       : this.defaultOptions;
     const bot = new Bot(service);
@@ -82,7 +113,7 @@ export default class Bot {
       const promises = posts.map(async (text: string) => bot.post(text));
       await Promise.all(promises);
     }
-    console.log(`>>>${nextParameter}<<<`);
+    addData(nextParameter);
     return posts;
   }
 }

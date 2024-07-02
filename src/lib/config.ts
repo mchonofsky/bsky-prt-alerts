@@ -15,4 +15,6 @@ export const bskyAccount: AtpAgentLoginOpts = {
   password: parsed.BSKY_PASSWORD,
 };
 
+export const firebaseServiceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT as string);
+
 export const bskyService = parsed.BSKY_SERVICE;

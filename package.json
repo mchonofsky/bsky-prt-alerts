@@ -36,6 +36,7 @@
   "dependencies": {
     "@atproto/api": "^0.2.11",
     "axios": "^1.5.1",
+    "firebase-admin": "^12.2.0",
     "zod": "^3.21.4"
   }
 }
