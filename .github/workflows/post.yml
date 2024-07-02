@@ -25,48 +25,11 @@ jobs:
 
       - name: Build app
         run: npm run build
-      - name: Get epoch time
-        run: |
-          echo "FAKE_COUNT=$(date --rfc-3339=seconds)" >> "$GITHUB_ENV"
-
-      - name: Download Cached Value
-        uses: actions/cache@v3
-        with:
-          path: calculated_value.txt  # Specify the path to the cached file
-          key: value-${{ env.FAKE_COUNT }} # this should fail to find the cache
-          restore-keys: |
-            value-a-
-
-      - name: Read Cached Value
-        run: |
-          # Check if the cached file exists
-          if [ -f calculated_value.txt ]; then
-            # Read the content of the cached file
-            CACHED_VALUE=$(tail -n 1 calculated_value.txt)
-            echo "Cached Value: $CACHED_VALUE"
-          else
-            CACHED_VALUE=""
-            echo "Cached file not found."
-          fi
-          echo "START_COUNT=${CACHED_VALUE}<<"
-          echo "START_COUNT=${CACHED_VALUE}" >> "$GITHUB_ENV"
       
       - name: Send post
         id: send-post
-        run: |
-          output=$(npm start -- ${{env.START_COUNT}} | grep ">>>" | sed 's/>>>\([^<]\+\)<<</\1/')
-          echo "LAST_COUNT=$output" >> "$GITHUB_OUTPUT"
-          if [ -z $output ]; then
-            output=env.START_COUNT;
-          fi
-          echo $output > calculated_value.txt
-          echo "output was $output"
+        run: npm start -- hello
         env:
           BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
           BSKY_PASSWORD: ${{ secrets.BSKY_PASSWORD }}
-      
-      - name: Cache Calculated Value
-        uses: actions/cache@v3
-        with:
-          path: calculated_value.txt  # Specify the path to the file you want to cache
-          key: value-a-${{ steps.send-post.outputs.LAST_COUNT }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
