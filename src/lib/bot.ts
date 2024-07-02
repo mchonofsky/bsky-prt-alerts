@@ -103,8 +103,8 @@ export default class Bot {
     console.log("Alerts remaining after filtering on new ID:", alerts.length)
     alerts = alerts.filter ((a: CTAAlert) => (! a.Headline.toLowerCase().includes('elevator'))) 
     console.log("Alerts remaining after filtering on 'elevator':", alerts.length)
-    alerts = alerts.filter ((a: CTAAlert) => (Date.parse(a.EventStart) > Date.now() - 3600000))
-    console.log("Alerts remaining after filtering on last hour:", alerts.length)
+    alerts = alerts.filter ((a: CTAAlert) => (Date.parse(a.EventStart) > Date.now() - 36000000))
+    console.log("Alerts remaining after filtering on last ten hours:", alerts.length)
     
     
     let posts = await Promise.all(alerts.map( async (alert_: CTAAlert) => {
