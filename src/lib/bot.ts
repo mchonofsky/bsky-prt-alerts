@@ -98,10 +98,13 @@ export default class Bot {
     let headFilt = alerts.map((x: CTAAlert)=>x.Headline + x.ShortDescription)
     let nextParameter = alerts.map((a: CTAAlert) => parseInt(a.AlertId)).reduce((a: number, r: number) => r > a ? r : a, 0);
     alerts = alerts.filter ( (a: CTAAlert, i: number) => i ==0 || ! (headFilt.slice(0, i - 1).includes(a.Headline + a.ShortDescription)))
+    console.log("Alerts remaining after filtering for duplicate headlines:", alerts.length)
     alerts = alerts.filter( (a: CTAAlert) => parseInt(a.AlertId) > parameter);
+    console.log("Alerts remaining after filtering on new ID:", alerts.length)
     alerts = alerts.filter ((a: CTAAlert) => (! a.Headline.toLowerCase().includes('elevator'))) 
+    console.log("Alerts remaining after filtering on 'elevator':", alerts.length)
     alerts = alerts.filter ((a: CTAAlert) => (Date.parse(a.EventStart) > Date.now() - 3600000))
-    console.log("remaining", alerts.length)
+    console.log("Alerts remaining after filtering on last hour:", alerts.length)
     
     
     let posts = await Promise.all(alerts.map( async (alert_: CTAAlert) => {
