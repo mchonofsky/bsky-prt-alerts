@@ -28,7 +28,7 @@ jobs:
       
       - name: Send post
         id: send-post
-        run: npm start hello
+        run: npm start 100
         env:
           BSKY_HANDLE: ${{ secrets.BSKY_HANDLE }}
           BSKY_PASSWORD: ${{ secrets.BSKY_PASSWORD }}
