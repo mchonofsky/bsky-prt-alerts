@@ -5,6 +5,8 @@ import { bskyAccount, bskyService, firebaseServiceAccount } from "./config.js";
 import type {
   CTAData, CTAAlert
 } from "./cta_types.js"
+import getDeltaT from "./getDeltaT.js";
+import moment from 'moment-timezone';
 
 import type {
   AtpAgentLoginOpts,
@@ -25,7 +27,9 @@ async function addData(parameter: number, headline: string, shortText: string, e
       id: parameter,
       headline: headline,
       shortText: shortText,
-      eventStart: admin.firestore.Timestamp.fromDate(new Date(eventStart)),
+      eventStart: admin.firestore.Timestamp.fromDate( new Date(
+        moment.tz(eventStart, "America/Chicago").format()
+      )),
       created: admin.firestore.Timestamp.now(),
     });
     console.log('Document written with ID: ', parameter);
@@ -108,6 +112,7 @@ export default class Bot {
     
     alerts.sort((a,b) => parseInt(a.AlertId) - parseInt(b.AlertId));
     
+    alerts.map(a => console.log(a.AlertId, a.EventStart))
     console.log("Total alerts:", alerts.length);
     
     //headfilt is a list that matches alerts that has the headline and short description fields
@@ -134,12 +139,12 @@ export default class Bot {
     
     alerts = alerts.filter ((a: CTAAlert) => (! a.Headline.toLowerCase().includes('elevator'))) 
     console.log("Alerts remaining after filtering on 'elevator':", alerts.length)
-    let DELTA_T = 3600 /* seconds */ * 1000 /* msec */ * 2 /* hours */;
-    let discarded_alerts = alerts.filter ((a: CTAAlert) => (Date.now() - Date.parse(a.EventStart) >= DELTA_T))
+    let DELTA_T = 3600 /* seconds */ * 1000 /* msec */ * 1 /* hours */;
+    let discarded_alerts = alerts.filter ((a: CTAAlert) => getDeltaT(a) >= DELTA_T)
     discarded_alerts.map((a: CTAAlert) => (
-      console.log(`[${a.AlertId}] discarded / ${a.EventStart}: ${a.Headline + a.ShortDescription} / start ${Date.parse(a.EventStart)} / now ${Date.now()} / delta ${Date.now() - Date.parse(a.EventStart) } (${Math.round((Date.now() - Date.parse(a.EventStart))*100 / 3600 / 1000)/100} hours)`)
+      console.log(`[${a.AlertId}] discarded / ${a.EventStart}: ${a.Headline + a.ShortDescription} / start ${Date.parse(a.EventStart)} / now ${Date.now()} / delta ${getDeltaT(a) } (${Math.round(getDeltaT(a)*100 / 3600 / 1000)/100} hours)`)
     ));
-    alerts = alerts.filter ((a: CTAAlert) => (Date.now() - Date.parse(a.EventStart) < DELTA_T))
+    alerts = alerts.filter ((a: CTAAlert) => getDeltaT(a) < DELTA_T)
     console.log("Alerts remaining after filtering on last hour:", alerts.length)
     
     
