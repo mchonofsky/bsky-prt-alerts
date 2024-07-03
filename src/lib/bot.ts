@@ -134,10 +134,10 @@ export default class Bot {
     
     alerts = alerts.filter ((a: CTAAlert) => (! a.Headline.toLowerCase().includes('elevator'))) 
     console.log("Alerts remaining after filtering on 'elevator':", alerts.length)
-    let DELTA_T = 3600000 * 1;
+    let DELTA_T = 3600 /* seconds */ * 1000 /* msec */ * 2 /* hours */;
     let discarded_alerts = alerts.filter ((a: CTAAlert) => (Date.now() - Date.parse(a.EventStart) >= DELTA_T))
     discarded_alerts.map((a: CTAAlert) => (
-      console.log(`${a.AlertId} / ${a.EventStart}: ${a.Headline + a.ShortDescription} ${Date.parse(a.EventStart)} / ${Date.now()} / ${Date.now() - Date.parse(a.EventStart) }`)
+      console.log(`[${a.AlertId}] discarded / ${a.EventStart}: ${a.Headline + a.ShortDescription} / start ${Date.parse(a.EventStart)} / now ${Date.now()} / delta ${Date.now() - Date.parse(a.EventStart) } (${Math.round((Date.now() - Date.parse(a.EventStart))*100 / 3600 / 1000)/100} hours)`)
     ));
     alerts = alerts.filter ((a: CTAAlert) => (Date.now() - Date.parse(a.EventStart) < DELTA_T))
     console.log("Alerts remaining after filtering on last hour:", alerts.length)
