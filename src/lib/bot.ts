@@ -1,5 +1,6 @@
 import axios from "axios";
 import admin from 'firebase-admin';
+
 import { bskyAccount, bskyService, firebaseServiceAccount } from "./config.js";
 import type {
   CTAData, CTAAlert
@@ -18,10 +19,14 @@ admin.initializeApp({
 });
 const db = admin.firestore();
 
-async function addData(parameter: number) {
+async function addData(parameter: number, headline: string, shortText: string, eventStart: string) {
   try {
     const docRef = await db.collection('alerts').doc(String(parameter)).set({
       id: parameter,
+      headline: headline,
+      shortText: shortText,
+      eventStart: admin.firestore.Timestamp.fromDate(new Date(eventStart)),
+      created: admin.firestore.Timestamp.now(),
     });
     console.log('Document written with ID: ', parameter);
   } catch (e) {
@@ -94,7 +99,9 @@ export default class Bot {
       : this.defaultOptions;
     const bot = new Bot(service);
     await bot.login(bskyAccount);
-    let alerts = (await axios.get<CTAData>('http://www.transitchicago.com/api/1.0/alerts.aspx?outputType=JSON&accessibility=FALSE&activeonly=TRUE')).data.CTAAlerts.Alert
+    let alerts = (await axios.get<CTAData>('http://www.transitchicago.com/api/1.0/alerts.aspx?outputType=JSON&accessibility=FALSE&activeonly=TRUE')).data.CTAAlerts.Alert;
+    alerts.sort((a,b) => parseInt(a.AlertId) - parseInt(b.AlertId));
+    console.log("Total alerts:", alerts.length);
     let headFilt = alerts.map((x: CTAAlert)=>x.Headline + x.ShortDescription)
     let nextParameter = alerts.map((a: CTAAlert) => parseInt(a.AlertId)).reduce((a: number, r: number) => r > a ? r : a, 0);
     alerts = alerts.filter ( (a: CTAAlert, i: number) => i ==0 || ! (headFilt.slice(0, i - 1).includes(a.Headline + a.ShortDescription)))
@@ -102,13 +109,16 @@ export default class Bot {
     alerts = alerts.filter( (a: CTAAlert) => parseInt(a.AlertId) > parameter);
     console.log("Alerts remaining after filtering on new ID:", alerts.length)
     alerts = alerts.filter ((a: CTAAlert) => (! a.Headline.toLowerCase().includes('elevator'))) 
+    // sort 
+    alerts.sort((a,b) => parseInt(a.AlertId) - parseInt(b.AlertId))
     console.log("Alerts remaining after filtering on 'elevator':", alerts.length)
     let DELTA_T = 3600000 * 1;
     let discarded_alerts = alerts.filter ((a: CTAAlert) => (Date.now() - Date.parse(a.EventStart) >= DELTA_T))
     discarded_alerts.map((a: CTAAlert) => (
-      console.log(`${a.EventStart}: ${a.Headline + a.ShortDescription} ${Date.parse(a.EventStart)} / ${Date.now()} / ${Date.now() - Date.parse(a.EventStart) }`)
+      console.log(`${a.AlertId} / ${a.EventStart}: ${a.Headline + a.ShortDescription} ${Date.parse(a.EventStart)} / ${Date.now()} / ${Date.now() - Date.parse(a.EventStart) }`)
     ));
     alerts = alerts.filter ((a: CTAAlert) => (Date.now() - Date.parse(a.EventStart) < DELTA_T))
+    alerts.map(a => addData(parseInt(a.AlertId), a.Headline, a.ShortDescription, a.EventStart));
     console.log("Alerts remaining after filtering on last hour:", alerts.length)
     
     
@@ -121,7 +131,6 @@ export default class Bot {
       const promises = posts.map(async (text: string) => bot.post(text));
       await Promise.all(promises);
     }
-    addData(nextParameter);
     return posts;
   }
 }
