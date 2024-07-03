@@ -99,18 +99,40 @@ export default class Bot {
       : this.defaultOptions;
     const bot = new Bot(service);
     await bot.login(bskyAccount);
-    let alerts = (await axios.get<CTAData>('http://www.transitchicago.com/api/1.0/alerts.aspx?outputType=JSON&accessibility=FALSE&activeonly=TRUE')).data.CTAAlerts.Alert;
+    let alerts = (
+      await axios.get<CTAData>(
+        'http://www.transitchicago.com/api/1.0/alerts.aspx?outputType=JSON&accessibility=FALSE&activeonly=TRUE')
+    ).data.CTAAlerts.Alert;
+    
+    // sort ascending by id 
+    
     alerts.sort((a,b) => parseInt(a.AlertId) - parseInt(b.AlertId));
+    
     console.log("Total alerts:", alerts.length);
+    
+    //headfilt is a list that matches alerts that has the headline and short description fields
+    //concatenated
     let headFilt = alerts.map((x: CTAAlert)=>x.Headline + x.ShortDescription)
-    let nextParameter = alerts.map((a: CTAAlert) => parseInt(a.AlertId)).reduce((a: number, r: number) => r > a ? r : a, 0);
+    
+    // keep the 0th element or keep if there's no duplicate in the preceeding list
     alerts = alerts.filter ( (a: CTAAlert, i: number) => i ==0 || ! (headFilt.slice(0, i - 1).includes(a.Headline + a.ShortDescription)))
+    let duplicate_alerts = 
+      alerts.filter ( (a: CTAAlert, i: number) => 
+        i != 0 && (headFilt.slice(0, i - 1).includes(a.Headline + a.ShortDescription))
+      );
+
     console.log("Alerts remaining after filtering for duplicate headlines:", alerts.length)
-    alerts = alerts.filter( (a: CTAAlert) => parseInt(a.AlertId) > parameter);
+    
+    alerts = alerts.filter((a: CTAAlert) => parseInt(a.AlertId) > parameter)
+    duplicate_alerts = duplicate_alerts.filter((a: CTAAlert) => parseInt(a.AlertId) > parameter)
     console.log("Alerts remaining after filtering on new ID:", alerts.length)
+    console.log("Duplicate alerts remaining after filtering on new ID:", duplicate_alerts.length)
+    
+    // log new ones
+    alerts.map(a => addData(parseInt(a.AlertId), a.Headline, a.ShortDescription, a.EventStart));
+    duplicate_alerts.map(a => addData(parseInt(a.AlertId), a.Headline, a.ShortDescription, a.EventStart));
+    
     alerts = alerts.filter ((a: CTAAlert) => (! a.Headline.toLowerCase().includes('elevator'))) 
-    // sort 
-    alerts.sort((a,b) => parseInt(a.AlertId) - parseInt(b.AlertId))
     console.log("Alerts remaining after filtering on 'elevator':", alerts.length)
     let DELTA_T = 3600000 * 1;
     let discarded_alerts = alerts.filter ((a: CTAAlert) => (Date.now() - Date.parse(a.EventStart) >= DELTA_T))
@@ -118,7 +140,6 @@ export default class Bot {
       console.log(`${a.AlertId} / ${a.EventStart}: ${a.Headline + a.ShortDescription} ${Date.parse(a.EventStart)} / ${Date.now()} / ${Date.now() - Date.parse(a.EventStart) }`)
     ));
     alerts = alerts.filter ((a: CTAAlert) => (Date.now() - Date.parse(a.EventStart) < DELTA_T))
-    alerts.map(a => addData(parseInt(a.AlertId), a.Headline, a.ShortDescription, a.EventStart));
     console.log("Alerts remaining after filtering on last hour:", alerts.length)
     
     
