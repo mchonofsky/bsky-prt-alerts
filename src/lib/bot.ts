@@ -112,7 +112,7 @@ export default class Bot {
     
     alerts.sort((a,b) => parseInt(a.AlertId) - parseInt(b.AlertId));
     
-    alerts.map(a => console.log(a.AlertId, a.EventStart))
+    alerts.map(a => console.log(a.AlertId, a.EventStart, a.Headline, a.ShortDescription))
     console.log("Total alerts:", alerts.length);
     
     //headfilt is a list that matches alerts that has the headline and short description fields
