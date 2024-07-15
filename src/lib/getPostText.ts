@@ -17,9 +17,10 @@ export default async function getPostText(alert_: CTAAlert) {
     }
   
   text = text.trim();
-  Object.keys(emojis).forEach(key => {
+  Object.keys(emojis).forEach((key) => {
     var re = new RegExp(`(${key} line)`, "i");
-    text = text.replace(re, `${emojis[[key]]} $1 $1`)
+    const emoji = emojis[key as keyof typeof emojis];
+    text = text.replace(re, `${emojis} $1`)
   })
   if ( text.includes("buses") ) {
     text = `${emojis.bus} ${text}`;
