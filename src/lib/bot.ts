@@ -112,7 +112,7 @@ export default class Bot {
     
     alerts.sort((a,b) => parseInt(a.AlertId) - parseInt(b.AlertId));
     
-    alerts.map(a => console.log(a.AlertId, a.EventStart, a.Headline, a.ShortDescription))
+    await Promise.all(alerts.map(async a => console.log(`id: ${a.AlertId} | start ${a.EventStart} CT | ${await getPostText(a)}`)));
     console.log("Total alerts:", alerts.length);
     
     //headfilt is a list that matches alerts that has the headline and short description fields
@@ -141,9 +141,9 @@ export default class Bot {
     console.log("Alerts remaining after filtering on 'elevator':", alerts.length)
     let DELTA_T = 3600 /* seconds */ * 1000 /* msec */ * 1 /* hours */;
     let discarded_alerts = alerts.filter ((a: CTAAlert) => getDeltaT(a) >= DELTA_T)
-    discarded_alerts.map((a: CTAAlert) => (
-      console.log(`[${a.AlertId}] discarded / ${a.EventStart}: ${a.Headline + a.ShortDescription} / start ${Date.parse(a.EventStart)} / now ${Date.now()} / delta ${getDeltaT(a) } (${Math.round(getDeltaT(a)*100 / 3600 / 1000)/100} hours)`)
-    ));
+    await Promise.all(discarded_alerts.map(async (a: CTAAlert) => (
+      console.log(`[${a.AlertId}] discarded / ${a.EventStart}: ${await getPostText(a)} / start ${Date.parse(a.EventStart)} / now ${Date.now()} / delta ${getDeltaT(a) } (${Math.round(getDeltaT(a)*100 / 3600 / 1000)/100} hours)`)
+    )));
     alerts = alerts.filter ((a: CTAAlert) => getDeltaT(a) < DELTA_T)
     console.log("Alerts remaining after filtering on last hour:", alerts.length)
     

@@ -11,7 +11,7 @@ export default async function getPostText(alert_: CTAAlert) {
       green: "🟩",
       purple: "🟪",
       orange: "🟧",
-      pink: "🩷",
+      pink: "🩷 ",
       yellow: "🟨",
       bus: "🚍"
     }
@@ -20,9 +20,9 @@ export default async function getPostText(alert_: CTAAlert) {
   Object.keys(emojis).forEach((key) => {
     var re = new RegExp(`(${key} line)`, "i");
     const emoji = emojis[key as keyof typeof emojis];
-    text = text.replace(re, `${emojis} $1`)
+    text = text.replace(re, `${emoji} $1`)
   })
-  if ( text.includes("buses") ) {
+  if ( text.includes("buses") || text.includes("bus stop") ) {
     text = `${emojis.bus} ${text}`;
   }
   if (text.length > 300) {
