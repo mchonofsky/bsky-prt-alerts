@@ -19,8 +19,11 @@ export default async function getPostText(alert_: CTAAlert) {
   text = text.trim();
   Object.keys(emojis).forEach((key) => {
     var re = new RegExp(`(${key} line)`, "i");
+    var k2 = key.charAt(0).toUpperCase + key.substring(1);
+    var re_comma = new RegExp(`(${k2},)`);
     const emoji = emojis[key as keyof typeof emojis];
     text = text.replace(re, `${emoji} $1`)
+    text = text.replace(re_comma, `${emoji} $1`)
   })
   if ( text.includes("buses") || text.includes("bus stop") ) {
     text = `${emojis.bus} ${text}`;
