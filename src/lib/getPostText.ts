@@ -18,7 +18,7 @@ export default async function getPostText(alert_: CTAAlert) {
   
   text = text.trim();
   Object.keys(emojis).forEach((key) => {
-    var re = new RegExp(`(${key}(, | line| &))`, "i");
+    var re = new RegExp(`(${key}( and|, | line| &))`, "i");
     const emoji = emojis[key as keyof typeof emojis];
     text = text.replace(re, `${emoji} $1`)
   })
