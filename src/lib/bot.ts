@@ -1,9 +1,9 @@
 import axios from "axios";
 import admin from 'firebase-admin';
 
-import { bskyAccount, bskyService, firebaseServiceAccount } from "./config.js";
+import { bskyAccount, bskyService, firebaseServiceAccount, metraAccount } from "./config.js";
 import type {
-  CTAData, CTAAlert
+  CTAData, CTAAlert, MetraData, MetraAlert
 } from "./cta_types.js"
 import getDeltaT from "./getDeltaT.js";
 import moment from 'moment-timezone';
@@ -21,7 +21,7 @@ admin.initializeApp({
 });
 const db = admin.firestore();
 
-async function addData(parameter: number, headline: string, shortText: string, eventStart: string) {
+async function addData(parameter: number, headline: string, shortText: string, eventStart: string, agency: string) {
   try {
     const docRef = await db.collection('alerts').doc(String(parameter)).set({
       id: parameter,
@@ -31,6 +31,7 @@ async function addData(parameter: number, headline: string, shortText: string, e
         moment.tz(eventStart, "America/Chicago").format()
       )),
       created: admin.firestore.Timestamp.now(),
+      agency: agency
     });
     console.log('Document written with ID: ', parameter);
   } catch (e) {
@@ -38,11 +39,14 @@ async function addData(parameter: number, headline: string, shortText: string, e
   }
 }
 
-async function getMax() {
+async function getMax(agency: string) {
   const alertsRef = db.collection('alerts');
   try {
-    const docRef = (await alertsRef.orderBy("id", "desc").limit(1).get()).docs[0];
-    console.log('Document written with ID: ', docRef.id);
+    const docRef = (await 
+        alertsRef.where('agency', '==', agency).orderBy("id", "desc").limit(1).get()
+    ).docs[0];
+    if (docRef == undefined) return 0;
+    console.log('Document retrieved with ID: ', docRef.id);
     return parseInt(docRef.id);
   } catch (e) {
     console.error('Error getting document: ', e);
@@ -96,18 +100,83 @@ export default class Bot {
     getPostText: (a: CTAAlert) => Promise<string>,
     botOptions?: Partial<BotOptions>
   ) {
-    const parameter = await getMax();
-    console.log('parameter returned is', parameter)
+    const cta_parameter = await getMax('cta');
+    const metra_parameter = await getMax('metra')
+    console.log('cta_parameter returned is', cta_parameter)
+    console.log('metra_parameter returned is', metra_parameter)
     const { service, dryRun /*, parameter */} = botOptions
       ? Object.assign({}, this.defaultOptions, botOptions)
       : this.defaultOptions;
     const bot = new Bot(service);
     await bot.login(bskyAccount);
     let alerts = (
-      await axios.get<CTAData>(
+      await 
+        axios.get<CTAData>(
         'http://www.transitchicago.com/api/1.0/alerts.aspx?outputType=JSON&accessibility=FALSE&activeonly=TRUE')
     ).data.CTAAlerts.Alert;
     
+    alerts = alerts.map (a => {
+        let b = a;
+        b.Agency = 'cta';
+        return b;
+    })
+
+    let metra_alerts = (
+        await axios.get<Array<MetraData>>('https://gtfsapi.metrarail.com/gtfs/alerts',
+            { auth: metraAccount }
+        )
+    ).data
+    const regex = /Metra Alert ([^ ]+) - /g;
+    metra_alerts = metra_alerts.filter(
+        x => regex.exec(x.alert.header_text.translation[0].text) !== null
+    )
+    metra_alerts.sort((a,b) => 
+        parseInt(a.id.replace(/[^0-9]/, '')) - parseInt(b.id.replace(/[^0-9]/, ''))
+    );
+
+    var alert_texts: Array<{id: string, text: string}> = []
+    for (var i=0; i < metra_alerts.length; i++) {
+        var headline = metra_alerts[i].alert.header_text.translation[0].text
+        var descr = metra_alerts[i].alert.description_text.translation[0].text
+        var rt_pair = regex.exec(headline)
+        var affected_route = null;
+        if (rt_pair !== null ) affected_route = rt_pair[1];
+        if (affected_route !== null ) {
+            descr = descr.replaceAll(/\<[^>]*\>/g,'').split('&nbsp;')[0]
+            var full_text = `🚆 Metra ${affected_route}: ${descr}`
+            alert_texts.push({id: metra_alerts[i].id, text: full_text})
+        }
+    }
+   
+    metra_alerts.filter(x => x.alert.active_period.length > 0).map(
+        alert => {
+            var full_text_items = alert_texts.filter( x => x.id == alert.id);
+            var full_text = '';
+            if (full_text_items.length > 0) {
+                full_text = full_text_items[0].text
+                alerts.push( {
+                    Agency: 'metra',
+                    AlertId: alert.id.replaceAll(/[^0-9]/g, ''),
+                    Headline: alert.alert.header_text.translation[0].text,
+                    ShortDescription: full_text,
+                    FullDescription: {['#cdata-section']: full_text},
+                    SeverityColor: '',
+                    SeverityScore: '',
+                    SeverityCSS: '',
+                    Impact: '',
+                    EventStart: alert.alert.active_period[0].start.low,
+                    EventEnd: alert.alert.active_period[0].end.low,
+                    TBD: '',
+                    MajorAlert: '',
+                    AlertURL: {['#cdata-section']: alert.alert.url.translation[0].text},
+                    ImpactedService: {Service: []},
+                    ttim: '',
+                    GUID: ''
+                })
+            }
+        }
+    )
+
     // sort ascending by id 
     
     alerts.sort((a,b) => parseInt(a.AlertId) - parseInt(b.AlertId));
@@ -118,7 +187,7 @@ export default class Bot {
     //headfilt is a list that matches alerts that has the headline and short description fields
     //concatenated
     let headFilt = alerts.map((x: CTAAlert)=>x.Headline + x.ShortDescription)
-    
+
     // keep the 0th element or keep if there's no duplicate in the preceeding list
     alerts = alerts.filter ( (a: CTAAlert, i: number) => i ==0 || ! (headFilt.slice(0, i - 1).includes(a.Headline + a.ShortDescription)))
     let duplicate_alerts = 
@@ -128,14 +197,19 @@ export default class Bot {
 
     console.log("Alerts remaining after filtering for duplicate headlines:", alerts.length)
     
-    alerts = alerts.filter((a: CTAAlert) => parseInt(a.AlertId) > parameter)
-    duplicate_alerts = duplicate_alerts.filter((a: CTAAlert) => parseInt(a.AlertId) > parameter)
+    alerts.map(x => console.log(x.Agency, x.AlertId, parseInt(x.AlertId)))
+    alerts = alerts.filter((a: CTAAlert) => (parseInt(a.AlertId) > cta_parameter && a.Agency == 'cta') 
+        || (parseInt(a.AlertId) > metra_parameter && a.Agency == 'metra') )
+    console.log('metra length:', alerts.filter((a: CTAAlert) => a.Agency === 'metra' ).length)
+    duplicate_alerts = duplicate_alerts.filter((a: CTAAlert) => (parseInt(a.AlertId) > cta_parameter && a.Agency == 'cta') 
+    || (parseInt(a.AlertId) > metra_parameter && a.Agency == 'metra') )
     console.log("Alerts remaining after filtering on new ID:", alerts.length)
     console.log("Duplicate alerts remaining after filtering on new ID:", duplicate_alerts.length)
     
     // log new ones
-    alerts.map(a => addData(parseInt(a.AlertId), a.Headline, a.ShortDescription, a.EventStart));
-    duplicate_alerts.map(a => addData(parseInt(a.AlertId), a.Headline, a.ShortDescription, a.EventStart));
+    console.log("logging alerts not seen yet")
+    alerts.map(a => addData(parseInt(a.AlertId), a.Headline, a.ShortDescription, a.EventStart, a.Agency));
+    duplicate_alerts.map(a => addData(parseInt(a.AlertId), a.Headline, a.ShortDescription, a.EventStart, a.Agency));
     
     alerts = alerts.filter ((a: CTAAlert) => (! a.Headline.toLowerCase().includes('elevator'))) 
     console.log("Alerts remaining after filtering on 'elevator':", alerts.length)

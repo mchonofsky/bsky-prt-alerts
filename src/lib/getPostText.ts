@@ -26,7 +26,18 @@ export default async function getPostText(alert_: CTAAlert) {
     text = `${emojis.bus} ${text}`;
   }
   if (text.length > 300) {
-    text = text.slice(0, 250) + '... ' + alert_.AlertURL['#cdata-section']
+    if (text.includes('🚆 Metra')) {
+        let text_blocks = text.split('. ')
+        let t = text_blocks[0]
+        let i = 1
+        while (t.length + text_blocks[i].length + 2 < 300 || i == t.length) {
+            t = t + '. ' + text_blocks[i]
+            i = i + 1
+        }
+        text = t
+    } else {
+        text = text.slice(0, 250) + '... ' + alert_.AlertURL['#cdata-section']
+    }
   }
   
   return text;
