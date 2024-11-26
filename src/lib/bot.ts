@@ -197,7 +197,6 @@ export default class Bot {
 
     console.log("Alerts remaining after filtering for duplicate headlines:", alerts.length)
     
-    alerts.map(x => console.log(x.Agency, x.AlertId, parseInt(x.AlertId)))
     alerts = alerts.filter((a: CTAAlert) => (parseInt(a.AlertId) > cta_parameter && a.Agency == 'cta') 
         || (parseInt(a.AlertId) > metra_parameter && a.Agency == 'metra') )
     console.log('metra length:', alerts.filter((a: CTAAlert) => a.Agency === 'metra' ).length)
