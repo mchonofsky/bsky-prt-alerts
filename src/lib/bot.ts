@@ -127,6 +127,9 @@ export default class Bot {
         )
     ).data
     const regex = /Metra Alert ([^ ]+) - /g;
+    console.log('\n\nregex null\n')
+    console.log(metra_alerts.filter( x => regex.exec(x.alert.header_text.translation[0].text) !== null)
+        .map(x => x.alert.header_text.translation[0]))
     metra_alerts = metra_alerts.filter(
         x => regex.exec(x.alert.header_text.translation[0].text) !== null
     )
@@ -148,6 +151,8 @@ export default class Bot {
         }
     }
    
+    console.log('\n\nactive period:\n\n', metra_alerts.filter(x => x.alert.active_period.length <= 0).map(x => x.alert.header_text.translation[0]))
+    console.log('\n\n')
     metra_alerts.filter(x => x.alert.active_period.length > 0).map(
         alert => {
             var full_text_items = alert_texts.filter( x => x.id == alert.id);
@@ -197,6 +202,12 @@ export default class Bot {
 
     console.log("Alerts remaining after filtering for duplicate headlines:", alerts.length)
     
+    console.log('old metra:',
+        alerts.filter(
+            a => a.Agency === 'metra' && parseInt(a.AlertId) <= metra_parameter
+        ).map(x => x.Headline)
+    )
+
     alerts = alerts.filter((a: CTAAlert) => (parseInt(a.AlertId) > cta_parameter && a.Agency == 'cta') 
         || (parseInt(a.AlertId) > metra_parameter && a.Agency == 'metra') )
     console.log('metra length:', alerts.filter((a: CTAAlert) => a.Agency === 'metra' ).length)
