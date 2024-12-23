@@ -186,7 +186,7 @@ export default class Bot {
     
     alerts.sort((a,b) => parseInt(a.AlertId) - parseInt(b.AlertId));
     
-    await Promise.all(alerts.map(async a => console.log(`id: ${a.AlertId} | start ${a.EventStart} CT | ${await getPostText(a)}`)));
+    // await Promise.all(alerts.map(async a => console.log(`id: ${a.AlertId} | start ${a.EventStart} CT | ${await getPostText(a)}`)));
     console.log("Total alerts:", alerts.length);
     
     //headfilt is a list that matches alerts that has the headline and short description fields
