@@ -101,7 +101,7 @@ export default class Bot {
     botOptions?: Partial<BotOptions>
   ) {
     const cta_parameter = await getMax('cta');
-    const metra_parameter = await getMax('metra')
+    const metra_parameter = await getMax('metra');
     console.log('cta_parameter returned is', cta_parameter)
     console.log('metra_parameter returned is', metra_parameter)
     const { service, dryRun /*, parameter */} = botOptions
@@ -126,22 +126,38 @@ export default class Bot {
             { auth: metraAccount }
         )
     ).data
-    const regex = /Metra Alert ([^ ]+) - /g;
-    console.log('\n\nregex null\n')
-    console.log(metra_alerts.filter( x => regex.exec(x.alert.header_text.translation[0].text) !== null)
-        .map(x => x.alert.header_text.translation[0]))
+
+    const regex = /reminder|reopen|elevator|extra service|pedestrian crossing to close|tracks.*out of service|temporary.*platform.*will move/i ;
+    
+    // artificial debugging, shows what failed
+    console.log('\n\nregex match, excluded\n')
+    console.log(metra_alerts
+        // true if matches exclusion words
+        .filter( x => regex.test(x.alert.header_text.translation[0].text) )
+        .map(x => x.alert.header_text.translation[0].text))
+    
     metra_alerts = metra_alerts.filter(
-        x => regex.exec(x.alert.header_text.translation[0].text) !== null
+        x => {
+            let if_matches_exclusions = regex.test(x.alert.header_text.translation[0].text)
+            return (! if_matches_exclusions)
+        }
+    )
+    console.log('\n\nremaining\n')
+    console.log(metra_alerts
+        .map(x => [x.alert.header_text.translation[0].text,  regex.test(x.alert.header_text.translation[0].text)])
     )
     metra_alerts.sort((a,b) => 
         parseInt(a.id.replace(/[^0-9]/, '')) - parseInt(b.id.replace(/[^0-9]/, ''))
     );
-
+    let rt_regex = /[A-Z][A-Z]-?[A-Z]?/g
     var alert_texts: Array<{id: string, text: string}> = []
     for (var i=0; i < metra_alerts.length; i++) {
-        var headline = metra_alerts[i].alert.header_text.translation[0].text
-        var descr = metra_alerts[i].alert.description_text.translation[0].text
-        var rt_pair = regex.exec(headline)
+        var headline = metra_alerts[i].alert.header_text.translation[0].text 
+        var matches = headline.match(rt_regex)
+        var route = ''
+        if ( matches !== null )  route = matches[0];
+        var descr =   metra_alerts[i].alert.description_text.translation[0].text
+        var rt_pair = route
         var affected_route = null;
         if (rt_pair !== null ) affected_route = rt_pair[1];
         if (affected_route !== null ) {
@@ -153,7 +169,7 @@ export default class Bot {
    
     console.log('\n\nactive period:\n\n', metra_alerts.filter(x => x.alert.active_period.length <= 0).map(x => x.alert.header_text.translation[0]))
     console.log('\n\n')
-    metra_alerts.filter(x => x.alert.active_period.length > 0).map(
+    metra_alerts.map(
         alert => {
             var full_text_items = alert_texts.filter( x => x.id == alert.id);
             var full_text = '';
@@ -169,8 +185,8 @@ export default class Bot {
                     SeverityScore: '',
                     SeverityCSS: '',
                     Impact: '',
-                    EventStart: alert.alert.active_period[0].start.low,
-                    EventEnd: alert.alert.active_period[0].end.low,
+                    EventStart: alert.alert.active_period.length ? alert.alert.active_period[0].start.low : Date(),
+                    EventEnd: alert.alert.active_period.length ? alert.alert.active_period[0].end.low : Date(),
                     TBD: '',
                     MajorAlert: '',
                     AlertURL: {['#cdata-section']: alert.alert.url.translation[0].text},
@@ -205,7 +221,7 @@ export default class Bot {
     console.log('old metra:',
         alerts.filter(
             a => a.Agency === 'metra' && parseInt(a.AlertId) <= metra_parameter
-        ).map(x => x.Headline)
+        ).map(x => [x.AlertId, x.Headline])
     )
 
     alerts = alerts.filter((a: CTAAlert) => (parseInt(a.AlertId) > cta_parameter && a.Agency == 'cta') 
