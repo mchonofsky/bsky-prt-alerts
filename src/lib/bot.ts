@@ -289,10 +289,10 @@ export default class Bot {
     var hashset = new Set();
     var values = hashvals.split(',')
     values.map( v => hashset.add(v))
-
+    
     // for post in posts
     // check if post in hashset
-    var new_posts = posts.filter(x => (! hashset.has(crypto.createHash('sha256').update(x).digest('base64') )))
+    var new_posts = posts.filter(x => (dryRun || (! hashset.has(crypto.createHash('sha256').update(x).digest('base64') ))))
     
     var new_posts_digest = (
         values.concat(
@@ -300,15 +300,20 @@ export default class Bot {
         ).slice(-300)
     ).join(',')
 
-    console.log('result of set value:', await putHash(new_posts_digest) )
 
     console.log('POSTING')
     
-    new_posts.map(p => console.log(p))
+    new_posts.map(p => 
+        console.log(
+            hashset.has(crypto.createHash('sha256').update(p).digest('base64')) ? 'ALREADY POSTED ONLINE:' : 'FULLY NEW POST:',
+            p
+        )
+    )
     
     if ( !dryRun ) {
       const promises = new_posts.map(async (text: string) => bot.post(text));
       await Promise.all(promises);
+      console.log('result of set value:', await putHash(new_posts_digest) )
     }
     return new_posts;
   }

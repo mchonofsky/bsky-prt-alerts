@@ -49,6 +49,8 @@ export default async function getPostText(alert_: CTAAlert) {
         text = text.slice(0, 250) + '... ' + alert_.AlertURL['#cdata-section']
     }
   }
-  
+  for ( var i = 0; i < 128; i++) {
+    text = text.replace( `&#${i};`, String.fromCharCode(i) )
+  }
   return text;
 }
