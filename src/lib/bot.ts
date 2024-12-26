@@ -293,12 +293,14 @@ export default class Bot {
     // for post in posts
     // check if post in hashset
     var new_posts = posts.filter(x => (! hashset.has(crypto.createHash('sha256').update(x).digest('base64') )))
-    var all_posts_digest = (
-        new_posts.map( x => crypto.createHash('sha256').update(x).digest('base64') )
-        .concat([ ...values ])
+    
+    var new_posts_digest = (
+        values.concat(
+            new_posts.map( x => crypto.createHash('sha256').update(x).digest('base64') )
+        ).slice(-300)
     ).join(',')
 
-    console.log('result of set value:', await putHash(all_posts_digest) )
+    console.log('result of set value:', await putHash(new_posts_digest) )
 
     console.log('POSTING')
     
