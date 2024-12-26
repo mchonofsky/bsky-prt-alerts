@@ -8,6 +8,8 @@ import type {
 import getDeltaT from "./getDeltaT.js";
 import moment from 'moment-timezone';
 
+import crypto from "crypto"
+
 import type {
   AtpAgentLoginOpts,
   AtpAgentOpts,
@@ -54,6 +56,35 @@ async function getMax(agency: string) {
   }
 }
 
+async function getHash(): Promise<string> {
+    const alertsRef = db.collection('alerts-fulltext-hash');
+    try {
+      const doc = (await 
+          alertsRef.doc('hash').get()
+      )
+      if (doc == undefined || doc.data() == undefined) return '';
+      let data = doc.data()
+      console.log('Document retrieved with ID: ', doc.id);
+      console.log('data is', data)
+      return (data || {hash: ''} ).hash
+    } catch (e) {
+      console.error('Error getting document: ', e);
+      return '';
+    }
+}
+
+async function putHash(hash: string): Promise<string> {
+    const alertsRef = db.collection('alerts-fulltext-hash');
+    try {
+      const doc = (await 
+          alertsRef.doc('hash').set({hash: hash})
+      )
+      return 'ok'
+    } catch (e) {
+      console.error('Error setting document: ', e);
+      return 'not ok';
+    }
+}
 type BotOptions = {
   service: string | URL;
   parameter: number; 
@@ -102,6 +133,7 @@ export default class Bot {
   ) {
     const cta_parameter = await getMax('cta');
     const metra_parameter = await getMax('metra');
+    const hashvals = await getHash(); 
     console.log('cta_parameter returned is', cta_parameter)
     console.log('metra_parameter returned is', metra_parameter)
     const { service, dryRun /*, parameter */} = botOptions
@@ -159,7 +191,7 @@ export default class Bot {
         var descr =   metra_alerts[i].alert.description_text.translation[0].text
         var rt_pair = route
         var affected_route = null;
-        if (rt_pair !== null ) affected_route = rt_pair[1];
+        if (rt_pair !== null ) affected_route = metra_alerts[i].alert.informed_entity[0].route_id;
         if (affected_route !== null ) {
             descr = descr.replaceAll(/\<[^>]*\>/g,'').split('&nbsp;')[0]
             var full_text = `🚆 Metra ${affected_route}: ${descr}`
@@ -224,21 +256,23 @@ export default class Bot {
         ).map(x => [x.AlertId, x.Headline])
     )
 
-    alerts = alerts.filter((a: CTAAlert) => (parseInt(a.AlertId) > cta_parameter && a.Agency == 'cta') 
-        || (parseInt(a.AlertId) > metra_parameter && a.Agency == 'metra') )
+    // alerts = alerts.filter((a: CTAAlert) => (parseInt(a.AlertId) > cta_parameter && a.Agency == 'cta') 
+    //    || (parseInt(a.AlertId) > metra_parameter && a.Agency == 'metra') )
     console.log('metra length:', alerts.filter((a: CTAAlert) => a.Agency === 'metra' ).length)
-    duplicate_alerts = duplicate_alerts.filter((a: CTAAlert) => (parseInt(a.AlertId) > cta_parameter && a.Agency == 'cta') 
-    || (parseInt(a.AlertId) > metra_parameter && a.Agency == 'metra') )
+    //duplicate_alerts = duplicate_alerts.filter((a: CTAAlert) => (parseInt(a.AlertId) > cta_parameter && a.Agency == 'cta') 
+    //|| (parseInt(a.AlertId) > metra_parameter && a.Agency == 'metra') )
     console.log("Alerts remaining after filtering on new ID:", alerts.length)
     console.log("Duplicate alerts remaining after filtering on new ID:", duplicate_alerts.length)
     
     // log new ones
-    console.log("logging alerts not seen yet")
-    alerts.map(a => addData(parseInt(a.AlertId), a.Headline, a.ShortDescription, a.EventStart, a.Agency));
-    duplicate_alerts.map(a => addData(parseInt(a.AlertId), a.Headline, a.ShortDescription, a.EventStart, a.Agency));
+    // console.log("logging alerts not seen yet")
+    // alerts.map(a => addData(parseInt(a.AlertId), a.Headline, a.ShortDescription, a.EventStart, a.Agency));
+    // duplicate_alerts.map(a => addData(parseInt(a.AlertId), a.Headline, a.ShortDescription, a.EventStart, a.Agency));
     
     alerts = alerts.filter ((a: CTAAlert) => (! a.Headline.toLowerCase().includes('elevator'))) 
     console.log("Alerts remaining after filtering on 'elevator':", alerts.length)
+    
+    
     let DELTA_T = 3600 /* seconds */ * 1000 /* msec */ * 1 /* hours */;
     let discarded_alerts = alerts.filter ((a: CTAAlert) => getDeltaT(a) >= DELTA_T)
     await Promise.all(discarded_alerts.map(async (a: CTAAlert) => (
@@ -252,6 +286,25 @@ export default class Bot {
       const text = await getPostText(alert_);
       return text;
     }))
+    
+    // filter posts to only new posts
+    var hashset = new Set();
+    var values = hashvals.split(',')
+    values.map( v => hashset.add(v))
+
+    // for post in posts
+    // check if post in hashset
+    var new_posts = posts.filter(x => (! hashset.has(crypto.createHash('sha256').update(x).digest('base64') )))
+    var all_posts_digest = (
+        new_posts.map( x => crypto.createHash('sha256').update(x).digest('base64') )
+        .concat([ ...values ])
+    ).join(',')
+
+    console.log('result of set value:', await putHash(all_posts_digest) )
+
+    console.log('POSTING')
+    
+    new_posts.map(p => console.log(p))
     
     if ( !dryRun ) {
       const promises = posts.map(async (text: string) => bot.post(text));

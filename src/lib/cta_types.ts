@@ -6,7 +6,7 @@ interface MetraText {
 
 export interface MetraAlert {
     url: {translation: [{text: string}]},
-    informed_entity: Array<{agency_id: string}>,
+    informed_entity: Array<{agency_id: string, route_id: string}>,
     active_period: Array<{start: {low: string}, end: {low: string}}>,
     header_text: { translation: Array<MetraText> },
     description_text: { translation: Array<MetraText> }
