@@ -17,14 +17,24 @@ export default async function getPostText(alert_: CTAAlert) {
     }
   
   text = text.trim();
+  
   Object.keys(emojis).forEach((key) => {
     var re = new RegExp(`(${key}( and|, | line| &))`, "i");
     const emoji = emojis[key as keyof typeof emojis];
     text = text.replace(re, `${emoji} $1`)
   })
+
   if ( text.includes("buses") || text.includes("bus stop") ) {
     text = `${emojis.bus} ${text}`;
   }
+
+  if (text.includes('🚆 Metra')) {
+    var m = text.match(/(🚆 Metra [A-Z\-]+: )([A-Z\-]+) (.*)/)
+    if (m !== null) {
+        text = m[1] + m[3];
+    }
+  }
+
   if (text.length > 300) {
     if (text.includes('🚆 Metra')) {
         let text_blocks = text.split('. ')
@@ -34,7 +44,7 @@ export default async function getPostText(alert_: CTAAlert) {
             t = t + '. ' + text_blocks[i]
             i = i + 1
         }
-        text = t
+        text = t;
     } else {
         text = text.slice(0, 250) + '... ' + alert_.AlertURL['#cdata-section']
     }

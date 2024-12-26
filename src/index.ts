@@ -13,9 +13,9 @@ if (argv.length == 0) {
 const texts = await Bot.run(getPostText, { parameter: argv[0], dryRun: dryRun });
 
 if (dryRun) {
-  console.log("this is a dry run. not posting. would have posted:");
+  console.log("\nthis is a dry run. not posting. would have posted:\n\n");
 } else {
-  console.log("actually posted:");
+  console.log("\nactually posted:\n\n");
 }
 
 texts.map((text: string) => console.log(`[${new Date().toISOString()}] Posted: "${text}"`));

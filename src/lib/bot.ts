@@ -199,8 +199,6 @@ export default class Bot {
         }
     }
    
-    console.log('\n\nactive period:\n\n', metra_alerts.filter(x => x.alert.active_period.length <= 0).map(x => x.alert.header_text.translation[0]))
-    console.log('\n\n')
     metra_alerts.map(
         alert => {
             var full_text_items = alert_texts.filter( x => x.id == alert.id);
@@ -217,8 +215,8 @@ export default class Bot {
                     SeverityScore: '',
                     SeverityCSS: '',
                     Impact: '',
-                    EventStart: alert.alert.active_period.length ? alert.alert.active_period[0].start.low : Date(),
-                    EventEnd: alert.alert.active_period.length ? alert.alert.active_period[0].end.low : Date(),
+                    EventStart: alert.alert.active_period.length ? alert.alert.active_period[0].start.low : (new Date()).toISOString(),
+                    EventEnd: alert.alert.active_period.length ? alert.alert.active_period[0].end.low : (new Date()).toISOString(),
                     TBD: '',
                     MajorAlert: '',
                     AlertURL: {['#cdata-section']: alert.alert.url.translation[0].text},
@@ -274,10 +272,10 @@ export default class Bot {
     
     
     let DELTA_T = 3600 /* seconds */ * 1000 /* msec */ * 1 /* hours */;
-    let discarded_alerts = alerts.filter ((a: CTAAlert) => getDeltaT(a) >= DELTA_T)
-    await Promise.all(discarded_alerts.map(async (a: CTAAlert) => (
-      console.log(`[${a.AlertId}] discarded / ${a.EventStart}: ${await getPostText(a)} / start ${Date.parse(a.EventStart)} / now ${Date.now()} / delta ${getDeltaT(a) } (${Math.round(getDeltaT(a)*100 / 3600 / 1000)/100} hours)`)
-    )));
+    // let discarded_alerts = alerts.filter ((a: CTAAlert) => getDeltaT(a) >= DELTA_T)
+    // await Promise.all(discarded_alerts.map(async (a: CTAAlert) => (
+    //   console.log(`[${a.AlertId}] discarded / ${a.EventStart}: ${await getPostText(a)} / start ${Date.parse(a.EventStart)} / now ${Date.now()} / delta ${getDeltaT(a) } (${Math.round(getDeltaT(a)*100 / 3600 / 1000)/100} hours)`)
+    // )));
     alerts = alerts.filter ((a: CTAAlert) => getDeltaT(a) < DELTA_T)
     console.log("Alerts remaining after filtering on last hour:", alerts.length)
     
@@ -307,9 +305,9 @@ export default class Bot {
     new_posts.map(p => console.log(p))
     
     if ( !dryRun ) {
-      const promises = posts.map(async (text: string) => bot.post(text));
+      const promises = new_posts.map(async (text: string) => bot.post(text));
       await Promise.all(promises);
     }
-    return posts;
+    return new_posts;
   }
 }
