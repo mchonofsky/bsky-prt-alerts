@@ -3,6 +3,10 @@ import type {CTAAlert} from './cta_types.js'
 export default async function getPostText(alert_: CTAAlert) {
   // Generate the text for your post here. You can return a string or a promise that resolves to a string
   var text = `${alert_.ShortDescription}`;
+  for ( var i = 0; i < 128; i++) {
+    text = text.replaceAll( `&#${i};`, String.fromCharCode(i) )
+  }
+  text = text.replaceAll(`  +`, ' ')
   const emojis = 
     {
       red: "🟥",
@@ -49,8 +53,7 @@ export default async function getPostText(alert_: CTAAlert) {
         text = text.slice(0, 250) + '... ' + alert_.AlertURL['#cdata-section']
     }
   }
-  for ( var i = 0; i < 128; i++) {
-    text = text.replace( `&#${i};`, String.fromCharCode(i) )
-  }
+
+
   return text;
 }
