@@ -1,8 +1,10 @@
-import type {CTAAlert} from './cta_types.js'
+import type {PRTAlert} from './cta_types.js'
 
-export default async function getPostText(alert_: CTAAlert) {
+export default async function getPostText(alert_: PRTAlert) {
   // Generate the text for your post here. You can return a string or a promise that resolves to a string
-  var text = `${alert_.ShortDescription}`;
+  var text = `${alert_.dtl}`;
+  let hyperlinks =  /<[^>]+>/g 
+  text = text.replaceAll(hyperlinks,'')
   for ( var i = 0; i < 128; i++) {
     text = text.replaceAll( `&#${i};`, String.fromCharCode(i) )
   }
@@ -11,47 +13,32 @@ export default async function getPostText(alert_: CTAAlert) {
     {
       red: "🟥",
       brown: "🟫",
-      blue: "🟦",
+      BLUE: "🟦",
       green: "🟩",
       purple: "🟪",
       orange: "🟧",
-      pink: "🩷",
+      PINK: "🩷",
       yellow: "🟨",
+      SLVR: "🩶",
       bus: "🚍"
     }
   
   text = text.trim();
   
   Object.keys(emojis).forEach((key) => {
-    var re = new RegExp(`(${key}( and|, | line| &))`, "i");
+    var re = new RegExp(`(${key}())`, "i");
     const emoji = emojis[key as keyof typeof emojis];
-    text = text.replace(re, `${emoji} $1`)
+    text = text.replace(re, `${emoji} $1`) // was ` $1`
   })
-
+  text = text.replaceAll(/(s)lvr/gi, '$1ilver')
+  text = text.replaceAll('Btw','between')
+  text = text.replaceAll(/^([0-9]+)\n/g, '🚌 Bus Route $1\n')
   if ( text.includes("buses") || text.includes("bus stop") ) {
     text = `${emojis.bus} ${text}`;
   }
 
-  if (text.includes('🚆 Metra')) {
-    var m = text.match(/(🚆 Metra [A-Z\-]+: )([A-Z\-]+) (.*)/)
-    if (m !== null) {
-        text = m[1] + m[3];
-    }
-  }
-
   if (text.length > 300) {
-    if (text.includes('🚆 Metra')) {
-        let text_blocks = text.split('. ')
-        let t = text_blocks[0]
-        let i = 1
-        while (t.length + text_blocks[i].length + 2 < 300 || i == t.length) {
-            t = t + '. ' + text_blocks[i]
-            i = i + 1
-        }
-        text = t;
-    } else {
-        text = text.slice(0, 250) + '... ' + alert_.AlertURL['#cdata-section']
-    }
+    text = text.slice(0, 250) + '... ' 
   }
 
 
