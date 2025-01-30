@@ -167,15 +167,15 @@ export default class Bot {
     )
     // filter posts to only new posts
     var hashset = new Set();
-    var values = hashvals.split(',')
-    values.map( v => hashset.add(v))
+    var old_hash_list = hashvals.split(',')
+    old_hash_list.map( v => hashset.add(v))
     
     // for post in posts
     // check if post in hashset
     var new_posts = posts.filter(x => (dryRun || (! hashset.has(crypto.createHash('sha256').update(x).digest('base64') ))))
     
     var new_posts_digest = (
-        values.concat(
+        old_hash_list.concat(
             new_posts.map( x => crypto.createHash('sha256').update(x).digest('base64') )
         ).slice(-1000)
     ).join(',')
@@ -186,7 +186,7 @@ export default class Bot {
     if ( !dryRun ) {
       const promises = new_posts.map(async (text: string) => bot.post(text));
       await Promise.all(promises);
-      // console.log('result of set value:', await putHash(new_posts_digest) )
+      console.log('result of set value:', await putHash(new_posts_digest) )
     }
     return new_posts;
   }
