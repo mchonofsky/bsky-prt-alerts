@@ -161,10 +161,6 @@ export default class Bot {
       return text;
     }))
 
-    console.log(`posts: ${posts.length}`)
-    posts.map( x => 
-      console.log(`\n\nPOST TEXT: >${x}`)
-    )
     // filter posts to only new posts
     var hashset = new Set();
     var old_hash_list = hashvals.split(',')
@@ -172,13 +168,24 @@ export default class Bot {
     
     // for post in posts
     // check if post in hashset
-    var new_posts = posts.filter(x => (dryRun || (! hashset.has(crypto.createHash('sha256').update(x).digest('base64') ))))
+    var new_posts = posts.filter(x => ((dryRun) || (! hashset.has(crypto.createHash('sha256').update(x).digest('base64') ))))
+    var hash_posts = posts.filter(x => ( hashset.has(crypto.createHash('sha256').update(x).digest('base64') )))
     
     var new_posts_digest = (
         old_hash_list.concat(
             new_posts.map( x => crypto.createHash('sha256').update(x).digest('base64') )
         ).slice(-1000)
     ).join(',')
+
+
+
+    console.log(`posts: ${posts.length}`)
+    new_posts.map( x => {
+      console.log(`\n\nPOST TEXT: >${x}`)
+      if (hash_posts.includes(x)) {
+        console.log('Excluded by saved hash')
+      }
+    } )
 
 
     // console.log('POSTING')
